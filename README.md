@@ -3,6 +3,9 @@
 A live dashboard of Biorouter downloads from GitHub releases, published at
 **https://baranzinilab.github.io/biorouter-usage-dashboard/**.
 
+This is an internal tracking page. It is not linked from the Biorouter website and asks
+search engines not to index it; keep it that way.
+
 It counts every file on every release of
 [BaranziniLab/biorouter](https://github.com/BaranziniLab/biorouter), and the release
 downloads of the skills, extensions and workflows listed in the BAAM marketplace.
