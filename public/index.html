@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Biorouter usage dashboard</title>
+  <meta name="description" content="Live downloads of Biorouter from GitHub releases, by day, platform, release and asset, plus the BAAM ecosystem.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <script>
+    // Apply the saved theme before first paint so the page never flashes.
+    try {
+      var t = localStorage.getItem('br-dashboard-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="band">
+    <a class="brand" href="https://biorouter.ucsf.edu/" aria-label="Biorouter website">
+      <img src="mark.svg" alt="" width="22" height="22">
+      <span class="brand-word">Biorouter</span>
+    </a>
+    <span class="band-sep" aria-hidden="true">/</span>
+    <span class="band-title">Usage</span>
+    <div class="band-actions">
+      <span class="live" id="live" data-state="connecting" role="status" aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="live-word" id="live-word">Connecting</span>
+        <span class="live-meta" id="live-meta"></span>
+      </span>
+      <button class="icon-btn" id="refresh" type="button" aria-label="Collect now" data-tip="Collect now">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89"/><path d="M13.5 2.5v3h-3"/></svg>
+      </button>
+      <button class="icon-btn" id="theme" type="button" aria-label="Switch theme" data-tip="Switch theme">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11" /><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" class="fill"/></svg>
+      </button>
+      <a class="icon-btn" id="gh" href="https://github.com/BaranziniLab/biorouter/releases" aria-label="Releases on GitHub" data-tip="Releases on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 13.5c-3 .9-3-1.5-4.2-1.8m8.4 3.3v-2.3a2 2 0 0 0-.56-1.55c1.88-.21 3.86-.92 3.86-4.2a3.27 3.27 0 0 0-.9-2.26 3.05 3.05 0 0 0-.06-2.27s-.71-.21-2.34.88a8 8 0 0 0-4.2 0C4.4 1.73 3.69 1.94 3.69 1.94a3.05 3.05 0 0 0-.06 2.27 3.27 3.27 0 0 0-.9 2.27c0 3.25 1.98 3.96 3.86 4.19A2 2 0 0 0 6 12.2v2.3"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="page" id="page" aria-busy="true">
+    <section class="intro">
+      <h1 class="title">Downloads and usage</h1>
+      <p class="supporting" id="intro-meta">Loading GitHub release data…</p>
+    </section>
+
+    <div id="notice"></div>
+
+    <section class="card overview" id="overview" aria-label="Overview"></section>
+
+    <section class="section" id="activity" aria-labelledby="activity-h">
+      <div class="section-head">
+        <h2 class="caps" id="activity-h">Activity</h2>
+        <div class="seg" role="radiogroup" aria-label="Range" id="range">
+          <button type="button" role="radio" data-range="30" aria-checked="false">30 days</button>
+          <button type="button" role="radio" data-range="90" aria-checked="true">90 days</button>
+          <button type="button" role="radio" data-range="all" aria-checked="false">All time</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card panel span-2" id="panel-downloads"></div>
+        <div class="card panel" id="panel-checks"></div>
+        <div class="card panel" id="panel-adoption"></div>
+      </div>
+    </section>
+
+    <section class="section" id="platforms" aria-labelledby="platforms-h">
+      <div class="section-head"><h2 class="caps" id="platforms-h">Platforms and files</h2></div>
+      <div class="grid-2">
+        <div class="card panel" id="panel-platform"></div>
+        <div class="card panel" id="panel-format"></div>
+      </div>
+    </section>
+
+    <section class="section" id="releases" aria-labelledby="releases-h">
+      <div class="section-head"><h2 class="caps" id="releases-h">Releases</h2></div>
+      <div class="grid-2">
+        <div class="card panel span-2" id="panel-release-chart"></div>
+        <div class="card panel span-2" id="panel-release-table"></div>
+      </div>
+    </section>
+
+    <section class="section" id="assets" aria-labelledby="assets-h">
+      <div class="section-head"><h2 class="caps" id="assets-h">Every asset</h2></div>
+      <div class="card panel" id="panel-assets"></div>
+    </section>
+
+    <section class="section" id="traffic" aria-labelledby="traffic-h">
+      <div class="section-head"><h2 class="caps" id="traffic-h">Repository traffic</h2></div>
+      <div class="grid-2">
+        <div class="card panel" id="panel-views"></div>
+        <div class="card panel" id="panel-clones"></div>
+        <div class="card panel" id="panel-referrers"></div>
+        <div class="card panel" id="panel-paths"></div>
+        <div class="card panel span-2" id="panel-stars"></div>
+      </div>
+    </section>
+
+    <section class="section" id="ecosystem" aria-labelledby="ecosystem-h">
+      <div class="section-head"><h2 class="caps" id="ecosystem-h">BAAM ecosystem</h2></div>
+      <div class="card overview eco-overview" id="eco-overview"></div>
+      <div class="grid-2">
+        <div class="card panel" id="panel-skills"></div>
+        <div class="card panel" id="panel-extensions"></div>
+      </div>
+    </section>
+
+    <footer class="foot" id="foot"></footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
