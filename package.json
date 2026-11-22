@@ -7,7 +7,8 @@
   "scripts": {
     "collect": "node scripts/collect.mjs",
     "build": "node scripts/collect.mjs --build",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "engines": {
     "node": ">=18"

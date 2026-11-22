@@ -34,6 +34,13 @@ GitHub reports one running total per release file and keeps no daily history.
 3. Between daily runs, the page reads the release totals from the GitHub API in the
    visitor's browser every five minutes and adds what changed, so the main numbers stay
    live.
+4. A file that leaves its release keeps counting. Replacing a release file
+   (`gh release upload --clobber`) deletes it and uploads a new one with a new id and a
+   count of 0, and GitHub keeps no trace of the old one. The collector notices a file
+   that was on a published release in the previous run and is gone from a repository it
+   read in full, keeps its last count in `data/state.json` (`retired`), and keeps adding
+   it and its measured days to the release, skill, extension or workflow it belonged to.
+   A skill the registry stops listing keeps the name and category it was listed with.
 
 What each file counts as:
 
@@ -46,6 +53,25 @@ What each file counts as:
 
 Draft releases are left out.
 
+## Before replacing release files
+
+The collector only sees a file's count once a day, so downloads a file gets between the
+last run and its replacement would be lost. Read the counts just before replacing files
+and pass them to a manual run, which folds them in before it collects:
+
+```bash
+gh api repos/BaranziniLab/biorouter-skills/releases --paginate \
+  --jq '.[] | .tag_name as $t | .assets[] | [$t, .id, .name, .download_count] | @tsv' > counts.tsv
+# ... replace the files ...
+gh workflow run daily.yml -R BaranziniLab/biorouter-usage-dashboard -f snapshot="$(cat counts.tsv)"
+```
+
+Each line is tag, asset id, file name and count, tab separated, with an optional fifth
+column for the ISO time it was read (otherwise `snapshot_at`, otherwise the run time).
+`snapshot_repo` names the repository for a snapshot of anything other than
+BaranziniLab/biorouter-skills. Folding the same snapshot twice, or an older one, changes
+nothing. Locally: `node scripts/collect.mjs --snapshot counts.tsv`.
+
 ## Files
 
 | Path | Purpose |
@@ -54,6 +80,7 @@ Draft releases are left out.
 | `scripts/collect.mjs` | Collects once and writes `public/data/dashboard.json` |
 | `scripts/preview.mjs` | Serves `public/` on http://127.0.0.1:4747 |
 | `lib/` | GitHub client, collection, history store and aggregation |
+| `test/` | `npm test`: the history rules on fixtures, and a dry run over a copy of `data/` that replaces every ecosystem file |
 | `data/` | The stored history, committed by the workflow |
 | `.github/workflows/daily.yml` | Runs the collector at 01:23 UTC and publishes to GitHub Pages |
 
@@ -68,7 +95,8 @@ node scripts/preview.mjs
 ```
 
 `node scripts/collect.mjs --build` rebuilds the site data from `data/` without calling
-GitHub.
+GitHub. `npm test` runs the tests (no network); the workflow runs them before every
+collection.
 
 ## Repository traffic
 

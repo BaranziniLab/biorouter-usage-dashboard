@@ -4,17 +4,39 @@ name: Daily collection
 # under data/, and publishes the dashboard to GitHub Pages. A push that changes
 # the site or the collector republishes from the stored history without
 # collecting.
+#
+# Before replacing release files (gh release upload --clobber), read their
+# counts and pass them to a manual run, so the downloads they gained since the
+# last collection are kept:
+#   gh api repos/BaranziniLab/biorouter-skills/releases --paginate \
+#     --jq '.[] | .tag_name as $t | .assets[] | [$t, .id, .name, .download_count] | @tsv' > counts.tsv
+#   gh workflow run daily.yml -R BaranziniLab/biorouter-usage-dashboard -f snapshot="$(cat counts.tsv)"
 
 on:
   schedule:
     - cron: '23 1 * * *' # 01:23 UTC; keep in step with SCHEDULE_UTC in scripts/collect.mjs
   workflow_dispatch:
+    inputs:
+      snapshot:
+        description: 'Optional release file counts to fold in first: tag, asset id, name, count[, ISO time], tab separated, one file per line'
+        required: false
+        default: ''
+      snapshot_repo:
+        description: 'Repository the snapshot lists'
+        required: false
+        default: 'BaranziniLab/biorouter-skills'
+      snapshot_at:
+        description: 'When the snapshot was read (ISO time); the run time if empty'
+        required: false
+        default: ''
   push:
     branches: [main]
     paths:
       - 'public/**'
       - 'lib/**'
       - 'scripts/**'
+      - 'test/**'
+      - 'package.json'
       - '.github/workflows/daily.yml'
 
 permissions:
@@ -39,6 +61,11 @@ jobs:
         with:
           node-version: 24
 
+      # No network and no packages: the history rules are checked against
+      # fixtures and against a copy of data/ before anything is committed.
+      - name: Test the collector
+        run: npm test
+
       - name: Collect download counts
         if: github.event_name != 'push'
         env:
@@ -46,6 +73,11 @@ jobs:
           # traffic needs a token that can read BaranziniLab/biorouter's traffic;
           # add it as the TRAFFIC_TOKEN secret to keep that history growing.
           GITHUB_TOKEN: ${{ secrets.TRAFFIC_TOKEN || github.token }}
+          # Empty on the schedule. Read from the environment, never pasted into
+          # the shell, so a snapshot's text cannot run as a command.
+          SNAPSHOT_TSV: ${{ inputs.snapshot }}
+          SNAPSHOT_REPO: ${{ inputs.snapshot_repo }}
+          SNAPSHOT_AT: ${{ inputs.snapshot_at }}
         run: node scripts/collect.mjs
 
       - name: Rebuild the site data from the stored history
